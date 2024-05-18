@@ -1,27 +1,11 @@
 from pygame import *
-#from random import randint
-#from time import time as timer
+'''Необходимые классы'''
 
+mixer.init()
+mixer.music.load('2.ogg')
+mixer.music.play()
 
-img_back = '1.jpg'
-img_hero = '11.png'
-img_boll = '111.png'
-
-#игровая сцена
-win_width = 700
-win_height = 500
-window = display.set_mode((win_width, win_height))
-background = transform.scale(image.load(img_back), (win_width, win_height))
-
-
-#флаги, отвечающие за состояние  игры
-game = True
-finish = False
-
-#таймер
-clock = time.Clock()
-FPS = 60
-
+#класс-родитель для спрайтов
 class GameSprite(sprite.Sprite):
   # конструктор класса
     def __init__(self, player_image, player_x, player_y, player_speed, wight, height):
@@ -33,70 +17,103 @@ class GameSprite(sprite.Sprite):
         self.rect.x = player_x
         self.rect.y = player_y
 
+
     def reset(self):
         window.blit(self.image, (self.rect.x, self.rect.y))
 
-# класс 1 и 2 игрока
+
 class Player(GameSprite):
-    # метод для управления спрайтом стрелками клавиатуры
-    def update_r(self):
-        keys = key.get_pressed()
-        if keys[K_UP] and self.rect.x > 5:
-            self.rect.x -= self.speed
-        if keys[K_DOWN] and self.rect.x < win_width - 80:
-            self.rect.x += self.speed
+   def update_r(self):
+       keys = key.get_pressed()
+       if keys[K_UP] and self.rect.y > 5:
+           self.rect.y -= self.speed
+       if keys[K_DOWN] and self.rect.y < win_height - 80:
+           self.rect.y += self.speed
+   def update_l(self):
+       keys = key.get_pressed()
+       if keys[K_w] and self.rect.y > 5:
+           self.rect.y -= self.speed
+       if keys[K_s] and self.rect.y < win_height - 80:
+           self.rect.y += self.speed
 
 
+#флаги, отвечающие за состояние игры
+game = True
+finish = False
+clock = time.Clock()
+FPS = 120
 
-    def update_l(self):
-        keys = key.get_pressed()
-        if keys[K_w] and self.rect.x > 5:
-            self.rect.x -= self.speed
-        if keys[K_s] and self.rect.x < win_width - 80:
-            self.rect.x += self.speed
+win_width = 700
+win_height = 500
+window = display.set_mode((win_width, win_height))
+background = transform.scale(image.load('1.png'), (win_width, win_height))
 
 
-racket1 = Player(img_hero, 30,200,4,50,150)
-racket2 = Player(img_hero,520,200,4,50,150)
-ball = GameSprite(img_boll,200,200,4,50,50)
+#создания мяча и ракетки   
+racket1 = Player('11.png', 40, 200, 4, 70, 120) 
+racket2 = Player('11.png', 600, 200, 4, 70, 120)
+ball = GameSprite('111.png', 200, 200, 4, 50, 50)
+
+
+font.init()
+font = font.Font(None, 60)
+lose1 = font.render('PLAYER 1 LOSE!', True, (250,250, 0))
+lose2 = font.render('PLAYER 2 LOSE!', True, (250,50, 0))
+
 
 speed_x = 3
 speed_y = 3
 
 
 while game:
-    for e in event.get():
-        if e.type == QUIT:
-            game = False
-
-    if finish != True:
+   for e in event.get():
+       if e.type == QUIT:
+           game = False
+  
+   if finish != True:
+        window.blit(background,(0,0))
         racket1.update_l()
         racket2.update_r()
         ball.rect.x += speed_x
         ball.rect.y += speed_y
-        
+
+
+        if sprite.collide_rect(racket1, ball) or sprite.collide_rect(racket2, ball):
+           speed_x *= -1
+           speed_y *= 1
+      
+       #если мяч достигает границ экрана, меняем направление его движения
+        if ball.rect.y > win_height-50 or ball.rect.y < 0:
+           speed_y *= -1
+
+
+       #если мяч улетел дальше ракетки, выводим условие проигрыша для первого игрока
+        if ball.rect.x < 0:
+           finish = True
+           window.blit(lose1, (200, 250))
+           game_over = True
+           mixer.init()
+           mixer.music.load('22.ogg')
+           mixer.music.play()
+
+
+       #если мяч улетел дальше ракетки, выводим условие проигрыша для второго игрока
+        if ball.rect.x > win_width:
+           finish = True
+           window.blit(lose2, (200, 250))
+           game_over = True
+           mixer.init()
+           mixer.music.load('22.ogg')
+           mixer.music.play()
+
+           
 
 
 
-      # сама игра: действия спрайтов, проверка правил игры, перерисовка
-    if not finish:
-        # обновляем фон
-        
-
-        
         racket1.reset()
         racket2.reset()
         ball.reset()
 
-    window.blit(background,(0,0))
-    display.update()
-    clock.tick(FPS)
 
-
-      # сама игра: действия спрайтов, проверка правил игры, перерисовка
-    if not finish:
-        # обновляем фон
-        window.blit(background,(0,0))
-
-    display.update()
-    clock.tick(FPS)
+        display.update()
+        clock.tick(FPS)
